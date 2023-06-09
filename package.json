@@ -1,0 +1,26 @@
+{
+  "name": "strim3",
+  "version": "1.0.0",
+  "description": "A p2p streaming platform utilizing decentralised technologies, IPFS, Filecoin, Huddle01",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiromasa0629/Strim3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hiromasa0629/Strim3/issues"
+  },
+  "homepage": "https://github.com/hiromasa0629/Strim3#readme",
+  "dependencies": {
+    "hardhat": "^2.15.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0"
+  }
+}
