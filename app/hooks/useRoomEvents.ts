@@ -9,7 +9,7 @@ interface UseRoomEventsHook {
   camStream: MediaStream;
 }
 
-const useRoomEvents = ({ produceVideo, camStream }: UseRoomEventsHook) => {
+const useRoomEvents = () => {
   useEventListener("room:joined", () => {
     toast.success("Room joined");
   });
