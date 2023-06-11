@@ -1,10 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Col, Row, Stack } from "react-bootstrap";
-import { useLobby, useRoom, useVideo } from "@huddle01/react/hooks";
+// import { Button, Col, Row, Stack } from "react-bootstrap";
+import { Button, Card, Col, List, Row, Space, Typography, message } from "antd";
+import { useLobby, usePeers, useRoom, useVideo } from "@huddle01/react/hooks";
 import { useEventListener } from "@huddle01/react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 import useRoomEvents from "../hooks/useRoomEvents";
+import {
+  MeetingMachineStatus,
+  useMeetingMachineContext,
+} from "../providers/MeetingMachineProvider";
+import { ProCard } from "@ant-design/pro-components";
 
 interface HostProps {
   roomId: string;
@@ -13,10 +19,11 @@ interface HostProps {
 const Host = (props: HostProps) => {
   const { roomId } = props;
   const router = useRouter();
+  const [messageApi, contextHolder] = message.useMessage();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [camOn, setCamOn] = useState<boolean>(false);
   const [micOn, setMicOn] = useState<boolean>(false);
-  const { joinLobby, isLoading: joinLobbyIsLoading } = useLobby();
+  const { joinLobby, isLoading: joinLobbyIsLoading, leaveLobby } = useLobby();
   const { joinRoom, leaveRoom } = useRoom();
   const {
     fetchVideoStream,
@@ -24,7 +31,11 @@ const Host = (props: HostProps) => {
     produceVideo,
     stopProducingVideo,
     stream: camStream,
+    isProducing,
   } = useVideo();
+  const { status } = useMeetingMachineContext();
+  const { peers } = usePeers();
+  const { Text } = Typography;
 
   useEffect(() => {
     if (router.isReady) {
@@ -32,8 +43,8 @@ const Host = (props: HostProps) => {
     }
   }, [router.isReady]);
 
-  useEventListener("lobby:joined", () => toast.success("Joined lobby"));
-  useEventListener("lobby:failed", () => toast.error("Lobby join failed"));
+  useEventListener("lobby:joined", () => messageApi.success("Joined lobby"));
+  useEventListener("lobby:failed", () => messageApi.error("Lobby join failed"));
   // TODO: Add mic
   useEventListener("lobby:mic-on", () => {});
   useEventListener("lobby:mic-off", () => {});
@@ -45,76 +56,143 @@ const Host = (props: HostProps) => {
     setCamOn(false);
     if (videoRef.current) videoRef.current.srcObject = null;
   });
-  useRoomEvents();
+  useRoomEvents(messageApi);
 
   const toggleCam = () => {
     if (camOn) stopVideoStream();
     else fetchVideoStream();
   };
 
+  const toggleProduceVideo = () => {
+    if (isProducing) stopProducingVideo();
+    else produceVideo(camStream);
+  };
+
   const handleJoinRoom = () => joinRoom.isCallable && joinRoom();
   const handleLeaveRoom = () => {
-    if (leaveRoom.isCallable) {
-      leaveRoom();
-      router.push("/");
-    }
+    leaveRoom();
+    router.push("/");
   };
-  const handleProduceVideo = () =>
-    produceVideo.isCallable && produceVideo(camStream);
-  const handleStopProduceVideo = () =>
-    stopProducingVideo.isCallable && stopProducingVideo();
 
   if (joinLobbyIsLoading) return <>Loading...</>;
 
   return (
-    <Row>
-      <Col xs="8">
-        <div>
-          <video
-            ref={videoRef}
-            autoPlay
-            poster="https://placehold.co/600x400"
-            width={"100%"}
-          />
-        </div>
-        <Row className="justify-content-center">
-          <Col xs="auto">
-            <Button
-              variant={!camOn ? "outline-primary" : "outline-danger"}
-              onClick={toggleCam}
-              disabled={
-                !fetchVideoStream.isCallable && !stopVideoStream.isCallable
-              }
-            >
-              {!camOn ? (
-                <i className="bi bi-camera-video-fill"></i>
-              ) : (
-                <i className="bi bi-camera-video-off-fill"></i>
-              )}
-            </Button>
-          </Col>
-          <Col xs="auto">
-            <Button variant={!micOn ? "outline-primary" : "outline-danger"}>
-              {!micOn ? (
-                <i className="bi bi-mic-fill"></i>
-              ) : (
-                <i className="bi bi-mic-mute-fill"></i>
-              )}
-            </Button>
-          </Col>
-        </Row>
-      </Col>
-      <Col xs="4">
-        <Stack gap={2} className="mx-auto">
-          <Button onClick={() => handleJoinRoom()}>JoinRoom</Button>
-          <Button onClick={() => handleLeaveRoom()}>LeaveRoom</Button>
-          <Button onClick={() => handleProduceVideo()}>ProduceVideo</Button>
-          <Button onClick={() => handleStopProduceVideo()}>
-            StopProduceVideo
-          </Button>
-        </Stack>
-      </Col>
-    </Row>
+    <>
+      {contextHolder}
+
+      <Row gutter={16}>
+        <Col xs={16}>
+          <Card title="Video">
+            <Space direction="vertical" className="w-100">
+              <Card bordered>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  poster="https://placehold.co/600x400"
+                  width={"100%"}
+                />
+              </Card>
+              <Space
+                direction="horizontal"
+                className="w-100 justify-content-center"
+              >
+                <Button
+                  danger={camOn}
+                  onClick={toggleCam}
+                  disabled={
+                    (!fetchVideoStream.isCallable &&
+                      !stopVideoStream.isCallable) ||
+                    status !== MeetingMachineStatus.JoinedLobby
+                  }
+                >
+                  {!camOn ? (
+                    <i className="bi bi-camera-video-fill"></i>
+                  ) : (
+                    <i className="bi bi-camera-video-off-fill"></i>
+                  )}
+                </Button>
+                <Button danger={micOn}>
+                  {!micOn ? (
+                    <i className="bi bi-mic-fill"></i>
+                  ) : (
+                    <i className="bi bi-mic-mute-fill"></i>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => toggleProduceVideo()}
+                  disabled={
+                    !camOn || status !== MeetingMachineStatus.JoinedRoom
+                  }
+                  danger={isProducing}
+                >
+                  {!isProducing ? (
+                    <i className="bi bi-play-fill"></i>
+                  ) : (
+                    <i className="bi bi-stop-fill"></i>
+                  )}
+                </Button>
+              </Space>
+            </Space>
+          </Card>
+        </Col>
+        <Col xs={8}>
+          {
+            <ProCard title="Action">
+              <ProCard bordered tabs={{ type: "card" }}>
+                {status === MeetingMachineStatus.JoinedLobby ? (
+                  <ProCard.TabPane key="start" tab="Start">
+                    <Space
+                      className="w-100 justify-content-center"
+                      direction="vertical"
+                      align="center"
+                    >
+                      <Button onClick={() => handleJoinRoom()}>JoinRoom</Button>
+                    </Space>
+                  </ProCard.TabPane>
+                ) : (
+                  <>
+                    <ProCard.TabPane key="chat" tab="Chat">
+                      <Space
+                        className="w-100 justify-content-center"
+                        direction="vertical"
+                        align="center"
+                      >
+                        Hello world
+                      </Space>
+                    </ProCard.TabPane>
+                    <ProCard.TabPane key="peers" tab="Peers">
+                      <Space
+                        className="w-100 justify-content-center"
+                        direction="vertical"
+                        align="center"
+                      >
+                        <List
+                          bordered
+                          dataSource={Object.values(peers)}
+                          className="w-100"
+                          renderItem={(peer) => (
+                            <List.Item>
+                              <Row className="justify-content-between">
+                                <Col xs={12}>
+                                  <Text ellipsis>{peer.peerId}</Text>
+                                </Col>
+                                <Col>
+                                  <Text>{peer.displayName}</Text>
+                                </Col>
+                              </Row>
+                            </List.Item>
+                          )}
+                        />
+                      </Space>
+                    </ProCard.TabPane>
+                  </>
+                )}
+              </ProCard>
+            </ProCard>
+          }
+        </Col>
+      </Row>
+    </>
   );
 };
 

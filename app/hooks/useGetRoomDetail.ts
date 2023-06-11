@@ -3,8 +3,9 @@ import { RoomDetial, roomsService } from "../api/roomsService";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useAccount } from "wagmi";
+import { MessageInstance } from "antd/es/message/interface";
 
-export const useGetRoomDetail = () => {
+export const useGetRoomDetail = (messageApi: MessageInstance) => {
   const [roomDetail, setRoomDetail] = useState<RoomDetial>();
   const [isHost, setIsHost] = useState<boolean>(false);
   const [isGuest, setIsGuest] = useState<boolean>(false);
@@ -23,7 +24,7 @@ export const useGetRoomDetail = () => {
         setRoomDetail(res);
       },
       onError: (error) => {
-        toast.error("Get room failed");
+        messageApi.error("Get room failed");
       },
     });
 

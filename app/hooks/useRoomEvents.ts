@@ -1,4 +1,5 @@
 import { useEventListener } from "@huddle01/react";
+import { MessageInstance } from "antd/es/message/interface";
 import { toast } from "react-toastify";
 
 interface UseRoomEventsHook {
@@ -9,13 +10,13 @@ interface UseRoomEventsHook {
   camStream: MediaStream;
 }
 
-const useRoomEvents = () => {
+const useRoomEvents = (messageApi: MessageInstance) => {
   useEventListener("room:joined", () => {
-    toast.success("Room joined");
+    messageApi.success("Room joined");
   });
 
   useEventListener("room:failed", () => {
-    toast.success("Room joined");
+    messageApi.success("Room joined");
   });
 };
 

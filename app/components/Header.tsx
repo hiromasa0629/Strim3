@@ -1,22 +1,50 @@
-import React from 'react'
-import { Row, Col } from 'react-bootstrap';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import React from "react";
+// import { Row, Col } from 'react-bootstrap';
+import { Row, Col, Button, Typography } from "antd";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useRouter } from "next/router";
+import {
+  MeetingMachineStatus,
+  useMeetingMachineContext,
+} from "../providers/MeetingMachineProvider";
+import { useLobby, useRoom, useVideo } from "@huddle01/react/hooks";
 
 const Header = () => {
-	return (
-		<Row className="justify-content-between">
-			<Col xs="auto">
-				<h3>Strim3</h3>
-			</Col>
-			<Col xs="auto">
-				<ConnectButton
-					accountStatus={"full"}
-					chainStatus={"icon"}
-					showBalance={true}
-				/>
-			</Col>
-		</Row>
-	)
-}
+  const { Title } = Typography;
+  const { status, info } = useMeetingMachineContext();
+  const { leaveLobby } = useLobby();
+  const { leaveRoom } = useRoom();
+  const { stopVideoStream } = useVideo();
+  const router = useRouter();
 
-export default Header
+  const handleHome = () => {
+    stopVideoStream();
+    switch (status) {
+      case MeetingMachineStatus.JoinedLobby:
+        leaveLobby();
+      case MeetingMachineStatus.JoinedRoom:
+        leaveRoom();
+      default:
+    }
+    router.push("/");
+  };
+
+  return (
+    <Row className="justify-content-between">
+      <Col>
+        <Title style={{ cursor: "pointer" }} onClick={() => handleHome()}>
+          Strim3
+        </Title>
+      </Col>
+      <Col>
+        <ConnectButton
+          accountStatus={"full"}
+          chainStatus={"icon"}
+          showBalance={true}
+        />
+      </Col>
+    </Row>
+  );
+};
+
+export default Header;

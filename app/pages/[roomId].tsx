@@ -17,13 +17,15 @@ import { useGetRoomDetail } from "../hooks/useGetRoomDetail";
 import Guest from "../components/Guest";
 import { useMeetingMachineContext } from "../providers/MeetingMachineProvider";
 import Host from "../components/Host";
+import { message } from "antd";
 
 const RoomId = () => {
   const router = useRouter();
+  const [messageApi, contextHolder] = message.useMessage();
   const { roomId } = router.query;
 
   const { getRoomDetail, getRoomDetailIsLoading, isHost, isGuest } =
-    useGetRoomDetail();
+    useGetRoomDetail(messageApi);
 
   useEffect(() => {
     if (router.isReady) {
@@ -35,6 +37,7 @@ const RoomId = () => {
 
   return (
     <>
+      {contextHolder}
       {isHost && <Host roomId={roomId as string} />}
       {isGuest && <Guest roomId={roomId as string} />}
     </>

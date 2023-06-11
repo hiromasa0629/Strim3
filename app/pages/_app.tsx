@@ -1,6 +1,8 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@rainbow-me/rainbowkit/styles.css";
-import "react-toastify/dist/ReactToastify.css";
+import "styles/globals.css";
+// import "react-toastify/dist/ReactToastify.css";
+import "antd/dist/reset.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import type { AppProps } from "next/app";
@@ -8,7 +10,7 @@ import { configureChains, createConfig, WagmiConfig } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { publicProvider } from "wagmi/providers/public";
 import { alchemyProvider } from "wagmi/providers/alchemy";
-import Layout from "../components/Layout";
+import AppLayout from "../components/Layout";
 import { useHuddle01 } from "@huddle01/react";
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -50,9 +52,9 @@ function MyApp({ Component, pageProps }: AppProps) {
         <QueryClientProvider client={queryClient}>
           <MeetingMachineProvider>
             {isInitialized ? (
-              <Layout>
+              <AppLayout>
                 <Component {...pageProps} />
-              </Layout>
+              </AppLayout>
             ) : (
               "Error"
             )}
