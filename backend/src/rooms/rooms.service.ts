@@ -32,7 +32,8 @@ export class RoomsService {
   async create(body: CreateRoomDto): Promise<any> {
     const { data } = await firstValueFrom(
       this.http.post('create-room', {
-        title: 'Huddle01-Test',
+        title: body.title,
+        description: body.desc,
         hostWallets: [body.address],
       }),
     ).catch((error: AxiosError) => {

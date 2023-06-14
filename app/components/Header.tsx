@@ -7,7 +7,7 @@ import {
   MeetingMachineStatus,
   useMeetingMachineContext,
 } from "../providers/MeetingMachineProvider";
-import { useLobby, useRoom, useVideo } from "@huddle01/react/hooks";
+import { useAudio, useLobby, useRoom, useVideo } from "@huddle01/react/hooks";
 
 const Header = () => {
   const { Title } = Typography;
@@ -15,9 +15,11 @@ const Header = () => {
   const { leaveLobby } = useLobby();
   const { leaveRoom } = useRoom();
   const { stopVideoStream } = useVideo();
+  const { stopAudioStream } = useAudio();
   const router = useRouter();
 
   const handleHome = () => {
+    stopAudioStream();
     stopVideoStream();
     switch (status) {
       case MeetingMachineStatus.JoinedLobby:

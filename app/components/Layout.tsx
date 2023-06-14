@@ -21,9 +21,9 @@ const AppLayout = (props: LayoutProps) => {
         </Head>
         <Layout className="px-5 py-3 h-100">
           <Header />
-          <div>{status}</div>
+          {/* <div>{status}</div>
           <div>{JSON.stringify(info)}</div>
-          <div>PeerId: {peerId}</div>
+          <div>PeerId: {peerId}</div> */}
           {children}
         </Layout>
       </Space>

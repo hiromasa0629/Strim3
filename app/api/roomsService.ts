@@ -1,5 +1,11 @@
 import apiClient from "./apiClient";
 
+export interface CreateRoomDto {
+  address: `0x${string}`;
+  title: string;
+  desc: string;
+}
+
 export interface RoomDetial {
   roomId: string;
   title: string;
@@ -13,8 +19,8 @@ export interface RoomDetial {
   hostWalletAddress: string[];
 }
 
-const createRoom = async (address: `0x${string}`) => {
-  const res = await apiClient.post<{ roomId: string }>("rooms", { address });
+const createRoom = async (data: CreateRoomDto) => {
+  const res = await apiClient.post<{ roomId: string }>("rooms", data);
   return res.data;
 };
 

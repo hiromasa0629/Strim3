@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "react-query";
-import { roomsService } from "../api/roomsService";
+import { CreateRoomDto, roomsService } from "../api/roomsService";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { MessageInstance } from "antd/es/message/interface";
@@ -16,7 +16,7 @@ export const useCreateRoom = (
     isSuccess: createRoomIsSuccess,
   } = useMutation({
     mutationKey: ["createRoom"],
-    mutationFn: (address: `0x${string}`) => roomsService.createRoom(address),
+    mutationFn: (data: CreateRoomDto) => roomsService.createRoom(data),
     onSuccess: (res) => {
       setRoomId(res.roomId);
       messageApi.success("Created room");

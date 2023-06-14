@@ -2,36 +2,26 @@ import { usePeers } from "@huddle01/react/hooks";
 import { MessageInstance } from "antd/es/message/interface";
 import { useEffect, useState } from "react";
 
-const useMediaRecording = (
-  messageApi: MessageInstance,
-  recordedRef: HTMLVideoElement | null
-) => {
+const useMediaRecording = (messageApi: MessageInstance) => {
   const { peers } = usePeers();
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recorder, setRecorder] = useState<MediaRecorder>();
-  const [recordedBlobs, setRecordedBlobs] = useState<BlobPart[]>([]);
   const [isReadyToDownload, setIsReadyToDownload] = useState<boolean>(false);
-
-  useEffect(() => {
-    console.log(recordedRef);
-    if (recordedBlobs.length > 0 && recordedRef) {
-      const videoBlob = new Blob(recordedBlobs, { type: "video/webm" });
-      const blobUrl = URL.createObjectURL(videoBlob);
-      console.log(blobUrl);
-      recordedRef.src = blobUrl;
-    }
-  }, [recordedBlobs, recordedRef]);
+  const [blobUrl, setBlobUrl] = useState<string>("");
 
   const startRecord = () => {
     const tmp = Object.values(peers).find((peer) => peer.role === "host");
     if (!tmp) return;
     const mediaStream = new MediaStream();
     mediaStream.addTrack(tmp.cam);
+    mediaStream.addTrack(tmp.mic);
 
     const mediaRecorder = new MediaRecorder(mediaStream);
     mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
-        setRecordedBlobs([event.data]);
+        const blob = new Blob([event.data], { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        setBlobUrl(url);
         setIsReadyToDownload(true);
       }
     };
@@ -51,18 +41,14 @@ const useMediaRecording = (
   };
 
   const downloadVideo = () => {
-    if (recordedBlobs.length === 0) return;
+    if (blobUrl === "") return;
 
-    const completeBlob = new Blob(recordedBlobs, { type: "video/webm" });
-    const blobUrl = URL.createObjectURL(completeBlob);
     const link = document.createElement("a");
     link.href = blobUrl;
     link.download = "myRecording.webm";
     link.click();
     URL.revokeObjectURL(blobUrl);
-    setRecordedBlobs([]);
     setIsReadyToDownload(false);
-    if (recordedRef) recordedRef.src = "";
   };
 
   return {
@@ -71,6 +57,7 @@ const useMediaRecording = (
     isRecording,
     downloadVideo,
     isReadyToDownload,
+    blobUrl,
   };
 };
 

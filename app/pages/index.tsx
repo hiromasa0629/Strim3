@@ -16,7 +16,9 @@ const index = () => {
   const { roomId, createRoom, createRoomIsLoading, createRoomIsSuccess } =
     useCreateRoom(address!, messageApi);
 
-  const [input, setInput] = useState<string>("");
+  const [joinRoomId, setJoinRoomId] = useState<string>("");
+  const [title, setTitle] = useState<string>("");
+  const [desc, setDesc] = useState<string>("");
 
   useEffect(() => {
     if (createRoomIsSuccess) {
@@ -24,12 +26,11 @@ const index = () => {
     }
   }, [createRoomIsSuccess]);
 
-  const handleOnChange = (input: string) => {
-    setInput(input);
-  };
-
-  const handleOnClick = () => {
-    router.push(`/${input}`);
+  const handleJoin = () => router.push(`/${joinRoomId}`);
+  const handleCreate = () => {
+    if (title === "") messageApi.error("Title is required");
+    else if (desc === "") messageApi.error("Description is required");
+    else createRoom({ address: address!, title, desc });
   };
 
   return (
@@ -37,33 +38,47 @@ const index = () => {
       {contextHolder}
       <Row gutter={16}>
         <Col xs={12}>
-          <Card
-            title="Room"
-            extra={
-              <Button
-                onClick={() => createRoom(address!)}
-                disabled={createRoomIsLoading}
-              >
-                Create
-              </Button>
-            }
-          >
-            <Card bordered>
-              <Space
-                align="center"
-                direction="vertical"
-                className="w-100 justify-content-center"
+          <Card>
+            <Space direction="vertical" className="w-100">
+              <Card
+                title="Create room"
+                extra={
+                  <Button
+                    // TODO: Pass description and title
+                    onClick={() => handleCreate()}
+                    disabled={createRoomIsLoading}
+                  >
+                    Create
+                  </Button>
+                }
               >
                 <Form layout="vertical">
-                  <Form.Item name="roomId" label="Room ID:">
-                    <Input onChange={(e) => handleOnChange(e.target.value)} />
+                  <Form.Item name="title" label="Title">
+                    <Input onChange={(e) => setTitle(e.target.value)} />
                   </Form.Item>
-                  <Form.Item>
-                    <Button onClick={() => handleOnClick()}>Join</Button>
+                  <Form.Item name="description" label="Description">
+                    <Input onChange={(e) => setDesc(e.target.value)} />
                   </Form.Item>
                 </Form>
-              </Space>
-            </Card>
+              </Card>
+              <Card
+                title="Join room"
+                bordered
+                extra={<Button onClick={() => handleJoin()}>Join</Button>}
+              >
+                <Space
+                  align="center"
+                  direction="vertical"
+                  className="w-100 justify-content-center"
+                >
+                  <Form layout="vertical">
+                    <Form.Item name="roomId" label="Room ID:">
+                      <Input onChange={(e) => setJoinRoomId(e.target.value)} />
+                    </Form.Item>
+                  </Form>
+                </Space>
+              </Card>
+            </Space>
           </Card>
         </Col>
         <Col xs={12}>

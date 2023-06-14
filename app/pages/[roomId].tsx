@@ -24,7 +24,7 @@ const RoomId = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const { roomId } = router.query;
 
-  const { getRoomDetail, getRoomDetailIsLoading, isHost, isGuest } =
+  const { getRoomDetail, getRoomDetailIsLoading, isHost, isGuest, roomDetail } =
     useGetRoomDetail(messageApi);
 
   useEffect(() => {
@@ -38,8 +38,8 @@ const RoomId = () => {
   return (
     <>
       {contextHolder}
-      {isHost && <Host roomId={roomId as string} />}
-      {isGuest && <Guest roomId={roomId as string} />}
+      {isHost && <Host roomId={roomId as string} roomDetail={roomDetail!} />}
+      {isGuest && <Guest roomId={roomId as string} roomDetail={roomDetail!} />}
     </>
   );
 };

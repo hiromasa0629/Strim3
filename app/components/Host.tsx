@@ -1,9 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 // import { Button, Col, Row, Stack } from "react-bootstrap";
 import { Button, Card, Col, List, Row, Space, Typography, message } from "antd";
-import { useLobby, usePeers, useRoom, useVideo } from "@huddle01/react/hooks";
+import {
+  useAudio,
+  useLobby,
+  usePeers,
+  useRoom,
+  useVideo,
+} from "@huddle01/react/hooks";
 import { useEventListener } from "@huddle01/react";
-import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 import useRoomEvents from "../hooks/useRoomEvents";
 import {
@@ -11,13 +16,17 @@ import {
   useMeetingMachineContext,
 } from "../providers/MeetingMachineProvider";
 import { ProCard } from "@ant-design/pro-components";
+import { RoomDetial } from "../api/roomsService";
+import Chat from "./Chat";
+import Peers from "./Peers";
 
 interface HostProps {
   roomId: string;
+  roomDetail: RoomDetial;
 }
 
 const Host = (props: HostProps) => {
-  const { roomId } = props;
+  const { roomId, roomDetail } = props;
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -31,11 +40,18 @@ const Host = (props: HostProps) => {
     produceVideo,
     stopProducingVideo,
     stream: camStream,
-    isProducing,
+    isProducing: isCamProducing,
   } = useVideo();
+  const {
+    fetchAudioStream,
+    stopAudioStream,
+    produceAudio,
+    stopProducingAudio,
+    stream: micStream,
+    isProducing: isMicProducing,
+  } = useAudio();
   const { status } = useMeetingMachineContext();
-  const { peers } = usePeers();
-  const { Text } = Typography;
+  const { Text, Paragraph } = Typography;
 
   useEffect(() => {
     if (router.isReady) {
@@ -46,8 +62,8 @@ const Host = (props: HostProps) => {
   useEventListener("lobby:joined", () => messageApi.success("Joined lobby"));
   useEventListener("lobby:failed", () => messageApi.error("Lobby join failed"));
   // TODO: Add mic
-  useEventListener("lobby:mic-on", () => {});
-  useEventListener("lobby:mic-off", () => {});
+  useEventListener("lobby:mic-on", () => setMicOn(true));
+  useEventListener("lobby:mic-off", () => setMicOn(false));
   useEventListener("lobby:cam-on", () => {
     setCamOn(true);
     if (videoRef.current) videoRef.current.srcObject = camStream;
@@ -63,9 +79,19 @@ const Host = (props: HostProps) => {
     else fetchVideoStream();
   };
 
-  const toggleProduceVideo = () => {
-    if (isProducing) stopProducingVideo();
-    else produceVideo(camStream);
+  const toggleMic = () => {
+    if (micOn) stopAudioStream();
+    else fetchAudioStream();
+  };
+
+  const toggleProduce = () => {
+    if (isCamProducing && isMicProducing) {
+      stopProducingVideo();
+      stopProducingAudio();
+    } else {
+      produceVideo(camStream);
+      produceAudio(micStream);
+    }
   };
 
   const handleJoinRoom = () => joinRoom.isCallable && joinRoom();
@@ -82,15 +108,18 @@ const Host = (props: HostProps) => {
 
       <Row gutter={16}>
         <Col xs={16}>
-          <Card title="Video">
+          <Card title={roomDetail.title}>
             <Space direction="vertical" className="w-100">
               <Card bordered>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  poster="https://placehold.co/600x400"
-                  width={"100%"}
-                />
+                <Space className="w-100" direction="vertical">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    poster="https://placehold.co/600x400"
+                    width={"100%"}
+                  />
+                  <Paragraph>{roomDetail.description}</Paragraph>
+                </Space>
               </Card>
               <Space
                 direction="horizontal"
@@ -111,7 +140,15 @@ const Host = (props: HostProps) => {
                     <i className="bi bi-camera-video-off-fill"></i>
                   )}
                 </Button>
-                <Button danger={micOn}>
+                <Button
+                  danger={micOn}
+                  onClick={toggleMic}
+                  disabled={
+                    (!fetchAudioStream.isCallable &&
+                      !stopAudioStream.isCallable) ||
+                    status !== MeetingMachineStatus.JoinedLobby
+                  }
+                >
                   {!micOn ? (
                     <i className="bi bi-mic-fill"></i>
                   ) : (
@@ -119,13 +156,13 @@ const Host = (props: HostProps) => {
                   )}
                 </Button>
                 <Button
-                  onClick={() => toggleProduceVideo()}
+                  onClick={() => toggleProduce()}
                   disabled={
                     !camOn || status !== MeetingMachineStatus.JoinedRoom
                   }
-                  danger={isProducing}
+                  danger={isCamProducing && isMicProducing}
                 >
-                  {!isProducing ? (
+                  {!isCamProducing && !isMicProducing ? (
                     <i className="bi bi-play-fill"></i>
                   ) : (
                     <i className="bi bi-stop-fill"></i>
@@ -152,38 +189,10 @@ const Host = (props: HostProps) => {
                 ) : (
                   <>
                     <ProCard.TabPane key="chat" tab="Chat">
-                      <Space
-                        className="w-100 justify-content-center"
-                        direction="vertical"
-                        align="center"
-                      >
-                        Hello world
-                      </Space>
+                      <Chat />
                     </ProCard.TabPane>
                     <ProCard.TabPane key="peers" tab="Peers">
-                      <Space
-                        className="w-100 justify-content-center"
-                        direction="vertical"
-                        align="center"
-                      >
-                        <List
-                          bordered
-                          dataSource={Object.values(peers)}
-                          className="w-100"
-                          renderItem={(peer) => (
-                            <List.Item>
-                              <Row className="justify-content-between">
-                                <Col xs={12}>
-                                  <Text ellipsis>{peer.peerId}</Text>
-                                </Col>
-                                <Col>
-                                  <Text>{peer.displayName}</Text>
-                                </Col>
-                              </Row>
-                            </List.Item>
-                          )}
-                        />
-                      </Space>
+                      <Peers />
                     </ProCard.TabPane>
                   </>
                 )}

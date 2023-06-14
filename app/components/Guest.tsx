@@ -1,5 +1,5 @@
 import { useEventListener } from "@huddle01/react";
-import { Video } from "@huddle01/react/components";
+import { Audio, Video } from "@huddle01/react/components";
 import {
   useLobby,
   usePeers,
@@ -11,36 +11,49 @@ import { useDisplayName, useRecorder } from "@huddle01/react/app-utils";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import useRoomEvents from "../hooks/useRoomEvents";
-// import { Button, Row, Stack } from "react-bootstrap";
-import { Row, Button, Space, message, Card, Form, Input, Col } from "antd";
+import {
+  Row,
+  Button,
+  Space,
+  message,
+  Card,
+  Form,
+  Input,
+  Col,
+  Typography,
+  List,
+} from "antd";
 import useMediaRecording from "../hooks/useMedaiRecording";
 import { ProCard } from "@ant-design/pro-components";
+import { RoomDetial } from "../api/roomsService";
+import Chat from "./Chat";
+import Peers from "./Peers";
+import { useRouter } from "next/router";
 
 interface GuestProps {
   roomId: string;
-}
-
-interface HostProps {
-  peerId: string;
-  role: "host" | "moderator" | "speaker" | "listener" | "peer";
-  mic: MediaStreamTrack;
-  cam: MediaStreamTrack;
-  displayName: string;
+  roomDetail: RoomDetial;
 }
 
 const Guest = (props: GuestProps) => {
-  const { roomId } = props;
+  const { roomId, roomDetail } = props;
   const { peers } = usePeers();
   const {
     joinLobby,
     isLoading: joinLobbyIsLoading,
     isLobbyJoined,
   } = useLobby();
-  const { joinRoom, isLoading: joinRoomIsLoading, isRoomJoined } = useRoom();
+  const {
+    joinRoom,
+    leaveRoom,
+    isLoading: joinRoomIsLoading,
+    isRoomJoined,
+  } = useRoom();
   const { setDisplayName } = useDisplayName();
   const [input, setInput] = useState<string>("");
   const [messageApi, contextHolder] = message.useMessage();
-  const recordedRef = useRef<HTMLVideoElement>(null);
+  const { Paragraph, Text } = Typography;
+  const router = useRouter();
 
   useEffect(() => {
     joinLobby(roomId);
@@ -56,21 +69,31 @@ const Guest = (props: GuestProps) => {
     joinRoom();
   };
 
+  const handleLeaveRoom = () => {
+    leaveRoom();
+    router.push("/");
+  };
+
   const {
     startRecord,
     stopRecord,
     isRecording,
     downloadVideo,
     isReadyToDownload,
-  } = useMediaRecording(messageApi, recordedRef.current);
+    blobUrl,
+  } = useMediaRecording(messageApi);
 
   return (
     <>
       {contextHolder}
       {isLobbyJoined && (
-        <Card title={`Joining ${roomId}`}>
+        <Card title={`Joining ${roomDetail.title}`}>
           <Card bordered>
-            <Space className="w-100 justify-content-center">
+            <Space
+              className="w-100 justify-content-center"
+              direction="vertical"
+            >
+              <Paragraph>{roomDetail.description}</Paragraph>
               <Form layout="inline">
                 <Form.Item name="displayName" label="Display Name">
                   <Input
@@ -88,30 +111,53 @@ const Guest = (props: GuestProps) => {
       )}
       {isRoomJoined && (
         <Row gutter={16}>
-          <Col xs={16}>
+          <Col xs={15}>
             {Object.values(peers)
-              .filter((peer) => peer.cam)
+              .filter((peer) => peer.cam && peer.mic)
               .map((peer) => {
                 if (peer.role === "host") {
                   return (
-                    <Card title={`${peer.peerId} ${peer.displayName}`}>
+                    <Card title={roomDetail.title}>
                       <Card bordered>
-                        <Video
-                          peerId={peer.peerId}
-                          track={peer.cam}
-                          key={peer.peerId}
-                          width={"100%"}
-                        />
+                        <Space direction="vertical" className="w-100">
+                          <div>
+                            <Video
+                              peerId={peer.peerId}
+                              track={peer.cam}
+                              key={peer.peerId}
+                              width={"100%"}
+                            />
+                            <Audio
+                              peerId={peer.peerId}
+                              track={peer.mic}
+                              key={peer.peerId + `audio`}
+                            />
+                          </div>
+                          <Paragraph>{roomDetail.description}</Paragraph>
+                        </Space>
                       </Card>
                     </Card>
                   );
                 }
               })}
           </Col>
-          <Col xs={8}>
-            <ProCard title="Chat">
+          <Col xs={9}>
+            <ProCard
+              title="Chat"
+              extra={
+                <Button onClick={() => handleLeaveRoom()} danger>
+                  Leave
+                </Button>
+              }
+            >
               <ProCard bordered tabs={{ type: "card" }}>
-                <ProCard.TabPane key="record" tab="Record">
+                <ProCard.TabPane key="chat" tab="Chat">
+                  <Chat />
+                </ProCard.TabPane>
+                <ProCard.TabPane key="peers" tab="Peers">
+                  <Peers />
+                </ProCard.TabPane>
+                <ProCard.TabPane key="record" tab="Clip">
                   <Space
                     className="w-100 justify-content-center"
                     align="center"
@@ -137,7 +183,7 @@ const Guest = (props: GuestProps) => {
                     className="w-100 justify-content-center"
                     align="center"
                   >
-                    <video ref={recordedRef} controls />
+                    <video src={blobUrl} controls />
                     <Button
                       onClick={() => downloadVideo()}
                       disabled={!isReadyToDownload}
