@@ -8,6 +8,7 @@ import { Button, Card, Col, Form, Input, Row, Space, message } from "antd";
 import { useRouter } from "next/router";
 import { useGetRoomDetail } from "../hooks/useGetRoomDetail";
 import { Video } from "@huddle01/react/components";
+import { useNFTStorage } from "../providers/NFTStorageProvider";
 
 const index = () => {
   const router = useRouter();

@@ -1,6 +1,7 @@
 import { usePeers } from "@huddle01/react/hooks";
 import { MessageInstance } from "antd/es/message/interface";
 import { useEffect, useState } from "react";
+import { useNFTStorage } from "../providers/NFTStorageProvider";
 
 const useMediaRecording = (messageApi: MessageInstance) => {
   const { peers } = usePeers();
@@ -8,6 +9,7 @@ const useMediaRecording = (messageApi: MessageInstance) => {
   const [recorder, setRecorder] = useState<MediaRecorder>();
   const [isReadyToDownload, setIsReadyToDownload] = useState<boolean>(false);
   const [blobUrl, setBlobUrl] = useState<string>("");
+  const client = useNFTStorage();
 
   const startRecord = () => {
     const tmp = Object.values(peers).find((peer) => peer.role === "host");
@@ -40,15 +42,11 @@ const useMediaRecording = (messageApi: MessageInstance) => {
     setIsRecording(false);
   };
 
-  const downloadVideo = () => {
+  const downloadVideo = async () => {
     if (blobUrl === "") return;
-
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = "myRecording.webm";
-    link.click();
-    URL.revokeObjectURL(blobUrl);
-    setIsReadyToDownload(false);
+    const blob = await fetch(blobUrl).then((r) => r.blob());
+    // const cid = await client.storeBlob(blob);
+    // console.log(cid);
   };
 
   return {

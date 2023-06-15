@@ -15,6 +15,7 @@ import { useHuddle01 } from "@huddle01/react";
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import MeetingMachineProvider from "../providers/MeetingMachineProvider";
+import NFTStorageProvider from "../providers/NFTStorageProvider";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [sepolia],
@@ -50,15 +51,17 @@ function MyApp({ Component, pageProps }: AppProps) {
     <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider chains={chains}>
         <QueryClientProvider client={queryClient}>
-          <MeetingMachineProvider>
-            {isInitialized ? (
-              <AppLayout>
-                <Component {...pageProps} />
-              </AppLayout>
-            ) : (
-              "Error"
-            )}
-          </MeetingMachineProvider>
+          <NFTStorageProvider>
+            <MeetingMachineProvider>
+              {isInitialized ? (
+                <AppLayout>
+                  <Component {...pageProps} />
+                </AppLayout>
+              ) : (
+                "Error"
+              )}
+            </MeetingMachineProvider>
+          </NFTStorageProvider>
         </QueryClientProvider>
       </RainbowKitProvider>
     </WagmiConfig>
