@@ -71,6 +71,8 @@ contract Strim is ERC721, ERC721URIStorage {
             "Only stream host is allowed to modifyStrimURI"
         );
         uint nonce = strimNonce[msg.sender];
+        uint tokenId = strimNonceToTokenId[msg.sender][nonce];
+        require(_exists(tokenId), "You do not have any Stream");
         _setTokenURI(strimNonceToTokenId[msg.sender][nonce], uri);
     }
 
