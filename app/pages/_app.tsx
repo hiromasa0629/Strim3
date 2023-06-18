@@ -7,7 +7,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import type { AppProps } from "next/app";
 import { configureChains, createConfig, WagmiConfig } from "wagmi";
-import { sepolia } from "wagmi/chains";
+import { sepolia, localhost, hardhat } from "wagmi/chains";
 import { publicProvider } from "wagmi/providers/public";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import AppLayout from "../components/Layout";
@@ -18,7 +18,7 @@ import MeetingMachineProvider from "../providers/MeetingMachineProvider";
 import NFTStorageProvider from "../providers/NFTStorageProvider";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [sepolia],
+  [hardhat],
   [
     publicProvider(),
     alchemyProvider({ apiKey: process.env.ALCHEMY_SEPOLIA_API_KEY! }),

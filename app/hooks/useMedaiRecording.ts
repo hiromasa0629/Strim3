@@ -11,12 +11,26 @@ const useMediaRecording = (messageApi: MessageInstance) => {
   const [blobUrl, setBlobUrl] = useState<string>("");
   const client = useNFTStorage();
 
-  const startRecord = () => {
-    const tmp = Object.values(peers).find((peer) => peer.role === "host");
-    if (!tmp) return;
+  const startRecord = (
+    isHost: boolean = false,
+    camStream?: MediaStream,
+    micStream?: MediaStream
+  ) => {
     const mediaStream = new MediaStream();
-    mediaStream.addTrack(tmp.cam);
-    mediaStream.addTrack(tmp.mic);
+
+    if (isHost) {
+      camStream
+        ?.getVideoTracks()
+        .forEach((track) => mediaStream.addTrack(track));
+      micStream
+        ?.getAudioTracks()
+        .forEach((track) => mediaStream.addTrack(track));
+    } else {
+      const tmp = Object.values(peers).find((peer) => peer.role === "host");
+      if (!tmp) return;
+      mediaStream.addTrack(tmp.cam);
+      mediaStream.addTrack(tmp.mic);
+    }
 
     const mediaRecorder = new MediaRecorder(mediaStream);
     mediaRecorder.ondataavailable = (event) => {
@@ -45,6 +59,7 @@ const useMediaRecording = (messageApi: MessageInstance) => {
   const downloadVideo = async () => {
     if (blobUrl === "") return;
     const blob = await fetch(blobUrl).then((r) => r.blob());
+    console.log(blob);
     // const cid = await client.storeBlob(blob);
     // console.log(cid);
   };

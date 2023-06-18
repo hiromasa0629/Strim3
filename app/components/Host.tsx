@@ -19,6 +19,7 @@ import { ProCard } from "@ant-design/pro-components";
 import { RoomDetial } from "../api/roomsService";
 import Chat from "./Chat";
 import Peers from "./Peers";
+import useMediaRecording from "../hooks/useMedaiRecording";
 
 interface HostProps {
   roomId: string;
@@ -33,6 +34,8 @@ const Host = (props: HostProps) => {
   const [camOn, setCamOn] = useState<boolean>(false);
   const [micOn, setMicOn] = useState<boolean>(false);
   const { joinLobby, isLoading: joinLobbyIsLoading, leaveLobby } = useLobby();
+  const { startRecord, stopRecord, isReadyToDownload, downloadVideo, blobUrl } =
+    useMediaRecording(messageApi);
   const { joinRoom, leaveRoom } = useRoom();
   const {
     fetchVideoStream,
@@ -84,14 +87,16 @@ const Host = (props: HostProps) => {
     else fetchAudioStream();
   };
 
-  const toggleProduce = () => {
-    if (isCamProducing && isMicProducing) {
-      stopProducingVideo();
-      stopProducingAudio();
-    } else {
-      produceVideo(camStream);
-      produceAudio(micStream);
-    }
+  const startProduce = () => {
+    produceVideo(camStream);
+    produceAudio(micStream);
+    startRecord(true, camStream, micStream);
+  };
+
+  const finishStream = () => {
+    stopProducingAudio();
+    stopProducingVideo();
+    stopRecord();
   };
 
   const handleJoinRoom = () => joinRoom.isCallable && joinRoom();
@@ -156,17 +161,21 @@ const Host = (props: HostProps) => {
                   )}
                 </Button>
                 <Button
-                  onClick={() => toggleProduce()}
+                  onClick={() => startProduce()}
                   disabled={
-                    !camOn || status !== MeetingMachineStatus.JoinedRoom
+                    !camOn ||
+                    status !== MeetingMachineStatus.JoinedRoom ||
+                    (isCamProducing && isMicProducing)
                   }
-                  danger={isCamProducing && isMicProducing}
                 >
-                  {!isCamProducing && !isMicProducing ? (
-                    <i className="bi bi-play-fill"></i>
-                  ) : (
-                    <i className="bi bi-stop-fill"></i>
-                  )}
+                  Start
+                </Button>
+                <Button
+                  onClick={() => finishStream()}
+                  disabled={status !== MeetingMachineStatus.JoinedRoom}
+                  danger
+                >
+                  Finish
                 </Button>
               </Space>
             </Space>
@@ -193,6 +202,21 @@ const Host = (props: HostProps) => {
                     </ProCard.TabPane>
                     <ProCard.TabPane key="peers" tab="Peers">
                       <Peers />
+                    </ProCard.TabPane>
+                    <ProCard.TabPane key="Mint" tab="Mint">
+                      <Space
+                        direction="vertical"
+                        className="w-100 justify-content-center"
+                        align="center"
+                      >
+                        <video src={blobUrl} controls className="w-100" />
+                        <Button
+                          onClick={() => downloadVideo()}
+                          disabled={!isReadyToDownload}
+                        >
+                          Mint
+                        </Button>
+                      </Space>
                     </ProCard.TabPane>
                   </>
                 )}
